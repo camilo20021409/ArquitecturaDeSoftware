@@ -1,59 +1,69 @@
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.net.Socket;
+import java.io.*;
+import java.net.*;
+import java.util.*;
 
 public class Cliente {
-    private static final String SERVIDOR_IP = "127.0.0.1";
-    private static final int PUERTO = 12345;
+    private final String HOST = "localhost";
+    private final int PUERTO = 1234;
+
+    public void iniciarCliente() {
+        try (Socket socket = new Socket(HOST, PUERTO);
+             ObjectOutputStream salida = new ObjectOutputStream(socket.getOutputStream());
+             ObjectInputStream entrada = new ObjectInputStream(socket.getInputStream());
+             Scanner scanner = new Scanner(System.in)) {
+    
+            System.out.println("Cliente conectado...");
+    
+            while (true) {
+                System.out.println("\n1. Ver estado de las mesas");
+                System.out.println("2. Reservar una mesa");
+                System.out.println("3. Liberar una mesa");
+                System.out.println("4. Salir");
+                System.out.print("Selecciona una opción: ");
+                int opcion = scanner.nextInt();
+    
+                if (opcion == 4) {
+                    salida.writeObject("salir");
+                    salida.writeInt(0);
+                    break;
+                }
+    
+                int numeroMesa = 0;
+                if (opcion == 2 || opcion == 3) {
+                    System.out.print("Ingresa el número de la mesa: ");
+                    numeroMesa = scanner.nextInt();
+                }
+    
+                switch (opcion) {
+                    case 1:
+                        salida.writeObject("ver");
+                        salida.writeInt(numeroMesa);
+                        salida.flush();
+                        break;
+                    case 2:
+                        salida.writeObject("reservar");
+                        salida.writeInt(numeroMesa);
+                        salida.flush();
+                        break;
+                    case 3:
+                        salida.writeObject("liberar");
+                        salida.writeInt(numeroMesa);
+                        salida.flush();
+                        break;
+                }
+                List<Mesa> mesas = (List<Mesa>) entrada.readObject();
+                for (Mesa mesa : mesas) {
+                    System.out.println("Mesa " + mesa.getNumero() + ": " + (mesa.isReservada() ? "Reservada" : "Libre"));
+                }
+            }
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+    }
+    
 
     public static void main(String[] args) {
-        try (Socket socket = new Socket(SERVIDOR_IP, PUERTO);
-             BufferedReader entrada = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-             PrintWriter salida = new PrintWriter(socket.getOutputStream(), true)) {
-
-            System.out.println("Conexión establecida con el servidor.");
-
-            BufferedReader teclado = new BufferedReader(new InputStreamReader(System.in));
-            String opcion;
-
-            do {
-                mostrarMenu();
-                opcion = teclado.readLine();
-                salida.println(opcion);
-
-                switch (opcion) {
-                    case "1":
-                    case "2":
-                    case "3":
-                        mostrarRespuesta(entrada);
-                        break;
-                    case "4":
-                        System.out.println("Saliendo del programa.");
-                        break;
-                    default:
-                        System.out.println("Opción inválida.");
-                }
-            } while (!opcion.equals("4"));
-        } catch (IOException e) {
-            System.out.println("Error de conexión con el servidor: " + e.getMessage());
-        }
-    }
-
-    private static void mostrarMenu() {
-        System.out.println("\n------ Menú ------");
-        System.out.println("1. Consultar mesas disponibles");
-        System.out.println("2. Reservar mesa");
-        System.out.println("3. Liberar mesa");
-        System.out.println("4. Salir");
-        System.out.print("Ingrese su opción: ");
-    }
-
-    private static void mostrarRespuesta(BufferedReader entrada) throws IOException {
-        String respuesta;
-        while ((respuesta = entrada.readLine()) != null) {
-            System.out.println(respuesta);
-        }
+        Cliente cliente = new Cliente();
+        cliente.iniciarCliente();
     }
 }

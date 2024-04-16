@@ -15,6 +15,7 @@ public class Cliente {
             System.out.println("Cliente conectado...");
     
             while (true) {
+                int it = 0;
                 System.out.println("\n1. Ver estado de las mesas");
                 System.out.println("2. Reservar una mesa");
                 System.out.println("3. Liberar una mesa");
@@ -36,6 +37,7 @@ public class Cliente {
     
                 switch (opcion) {
                     case 1:
+                    it = 1;
                         salida.writeObject("ver");
                         salida.writeInt(numeroMesa);
                         salida.flush();
@@ -52,9 +54,15 @@ public class Cliente {
                         break;
                 }
                 List<Mesa> mesas = (List<Mesa>) entrada.readObject();
-                for (Mesa mesa : mesas) {
-                    System.out.println("Mesa " + mesa.getNumero() + ": " + (mesa.isReservada() ? "Reservada" : "Libre"));
+                if (it == 1) {
+                    for (Mesa mesa : mesas) {
+                        System.out.println("Mesa " + mesa.getNumero() + ": " + (mesa.isReservada() ? "Reservada" : "Libre"));
+                    }
+                    it = 0;
+
+                    
                 }
+
             }
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
